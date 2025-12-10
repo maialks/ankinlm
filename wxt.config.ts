@@ -1,15 +1,49 @@
 import { defineConfig } from 'wxt';
 
-// See https://wxt.dev/api/config.html
 export default defineConfig({
-  modules: ['@wxt-dev/module-react'],
+  modules: ['@wxt-dev/module-react', '@wxt-dev/webextension-polyfill'],
   srcDir: 'src',
-  manifest: {
-    name: 'AnkiNLM',
-    description:
-      'The fastest way to export your generated Notebook LM flashcards and import them to your Anki decks',
-    version: '1.2.1',
-    permissions: ['scripting', 'clipboardWrite', 'webNavigation'],
-    host_permissions: ['https://notebooklm.google.com/*', 'https://*.usercontent.goog/*'],
+  manifest: ({ browser }) => {
+    const isFirefox = browser === 'firefox';
+
+    return {
+      name: 'AnkiNLM',
+      version: '1.2',
+      description:
+        'The fastest way to export your generated Notebook LM flashcards and import them to your Anki decks',
+
+      manifest_version: isFirefox ? 2 : 3,
+
+      permissions: isFirefox
+        ? [
+            'activeTab',
+            'tabs',
+            'clipboardWrite',
+            'webNavigation',
+            'https://notebooklm.google.com/*',
+            'https://*.usercontent.goog/*',
+            'https://*.scf.usercontent.goog/*',
+            '*://*.usercontent.goog/*',
+            'https://*.usercontent.goog/*/shim.html*',
+            '*://*.usercontent.goog/*/shim.html*',
+          ]
+        : ['scripting', 'clipboardWrite', 'webNavigation'],
+
+      ...(isFirefox
+        ? {
+            browser_specific_settings: {
+              gecko: {
+                id: 'ankinlm@lkmss.dev',
+                strict_min_version: '109.0',
+              },
+            },
+          }
+        : {
+            host_permissions: [
+              'https://notebooklm.google.com/*',
+              'https://*.usercontent.goog/*',
+            ],
+          }),
+    };
   },
 });
